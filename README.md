@@ -8,7 +8,7 @@ rendered live in the browser with Three.js.
 Walk up to the record shop the neighbourhood is named after and three fictional
 releases are waiting in the window.
 
-**Live site:** _to be added once GitHub Pages is enabled_
+**Live site: <https://hxmzaehsan.github.io/last-train-records/>**
 
 ![The settled city: a vinyl record whose grooves have risen into a miniature
 night-time Tokyo neighbourhood, with a lit commuter train at the platform and
