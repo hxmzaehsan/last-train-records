@@ -502,12 +502,42 @@ type SceneProps = {
  * city and train — lives in one rotating world group. The turntable body and
  * tonearm stay fixed; the stylus is the construction point.
  */
+/**
+ * Pick a device pixel ratio from a *fragment budget* rather than a fixed cap.
+ *
+ * The canyon carries around twenty small neon lights and every surface is a
+ * MeshStandardMaterial, so each fragment pays for all of them: measured on an
+ * M4 Max, the lights alone are 5 ms of an 8.3 ms frame. That makes cost scale
+ * with total pixels, not with how sharp the screen is — a fixed ratio that
+ * feels fine in a small window turns a full-screen 4K one into a slideshow.
+ *
+ * Budgeting pixels instead keeps the frame at roughly the same cost on every
+ * display: small windows get a crisp ratio, very large ones quietly render
+ * softer rather than dropping frames.
+ *
+ * This is read once, at mount, and that is deliberate — the postprocessing
+ * composer allocates its render targets from the ratio it is built with and
+ * does not rebuild them when the ratio changes later. Lowering the ratio at
+ * runtime shrinks the canvas but not the buffers, which measured *slower*
+ * (the scene still renders large, then gets scaled down).
+ */
+const PIXEL_BUDGET = 1_500_000
+
+function chooseDpr() {
+  if (typeof window === 'undefined') return 1
+  const css = window.innerWidth * window.innerHeight
+  const native = Math.min(window.devicePixelRatio || 1, 1.5)
+  if (!css) return native
+  return Math.max(0.75, Math.min(native, Math.sqrt(PIXEL_BUDGET / css)))
+}
+
 export const Scene = forwardRef<SceneHandle, SceneProps>(function Scene(
   { onReady, onPhase, onView },
   ref,
 ) {
   const world = useRef<THREE.Group>(null)
   const reduced = useReducedMotion()
+  const dpr = useMemo(chooseDpr, [])
 
   useImperativeHandle(
     ref,
@@ -551,14 +581,7 @@ export const Scene = forwardRef<SceneHandle, SceneProps>(function Scene(
     <Canvas
       shadows
       frameloop="always"
-      /*
-       * Every surface here is a MeshStandardMaterial and the canyon carries
-       * around twenty small neon lights, so each fragment pays for all of them
-       * — this scene is fill-rate bound, not draw-call bound. On a 2x display
-       * a cap of 2 means four times the pixels of 1, which measured at 31 fps.
-       * 1.5 keeps the miniature crisp at a little over half the cost.
-       */
-      dpr={[1, 1.5]}
+      dpr={dpr}
       gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping
