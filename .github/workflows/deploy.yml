@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+# Runs on every push to the default branch, and can be started by hand from the
+# Actions tab. If this repository's default branch is not `main`, change the
+# branch name below to match.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The permissions the official Pages actions need: read the code, publish the
+# site, and mint the token that authorises the deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deployment finish rather than cancelling it, but never run two
+# at once.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` installs exactly what package-lock.json pins, so a deployed
+      # build always matches a local one.
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      # `npm run build` is `tsc --noEmit && vite build` — the type-check gates
+      # the build, so a type error fails the deployment rather than shipping.
+      - name: Type-check and build
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

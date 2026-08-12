@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+*.tsbuildinfo
+
+# local environment
+.env
+.env.*
+!.env.example
+
+# caches
+.vite/
+.cache/
+.parcel-cache/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# editor and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code local configuration (dev-server launch config, not part of the site)
+.claude/
+
+# ---------------------------------------------------------------------------
+# Working material, deliberately not published.
+#
+# `work/` holds raw generator output and the loud volume-matched review copies
+# used to audition the sound; `outputs/` holds early visual-direction stills
+# and a motion study. Neither is used by the live site, both are large, and
+# their redistribution rights are unresolved. See ASSET_CREDITS.md.
+# ---------------------------------------------------------------------------
+work/
+outputs/
+
+# Generated video and stills from the abandoned video-led approach. Nothing in
+# the live site loads these — the experience is rendered live in Three.js — and
+# their licence is unresolved, so they are not redistributed.
+public/media/

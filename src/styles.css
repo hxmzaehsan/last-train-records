@@ -1,0 +1,1308 @@
+/*
+ * Hero headline only. LT Remark by Daniel Lyons / LyonsType is licensed under
+ * the SIL Open Font License 1.0, whose clause 2 permits bundling it with
+ * software as long as the copyright notice and licence travel with it — see
+ * src/fonts/OFL-LTRemark.txt.
+ *
+ * The original .otf ships unconverted on purpose: OFL 1.0 counts a change of
+ * format as a "Modified Version", and a modified version may not keep the
+ * reserved name "LT Remark". A local copy is preferred when the visitor
+ * already has the family installed, otherwise the bundled file is fetched.
+ */
+@font-face {
+  font-family: 'LT Remark';
+  src:
+    local('LT Remark'),
+    local('LT Remark Regular'),
+    local('LTRemark-Regular'),
+    url('./fonts/LTRemark-Regular.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --ink: #e9f1ea;
+  --ink-muted: #a8b1ae;
+  --ink-faint: #707a78;
+  --cyan: #20e7ff;
+  --cyan-soft: #6feeff;
+  --magenta: #ff2c9c;
+  --bg: #050607;
+  --font-en: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'LT Remark', Georgia, serif;
+  --font-jp: 'Noto Sans JP Variable', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --ease: cubic-bezier(0.22, 0.68, 0.16, 1);
+  /* symmetric ease-in-out for control travel, so it tracks the camera */
+  --travel-ease: cubic-bezier(0.45, 0, 0.55, 1);
+  /* standby composition inside the label ring: the control's height, the
+     wordmark's measured height, and the gap between the two */
+  --cue-h: 42px;
+  --standby-mark-h: 42px;
+  --standby-gap: 20px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: radial-gradient(120% 95% at 32% 12%, #090b0d 0%, #060708 52%, #050607 100%);
+  color: var(--ink);
+  font-family: var(--font-en);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+}
+
+.stage canvas {
+  display: block;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: radial-gradient(
+    115% 100% at 42% 38%,
+    transparent 42%,
+    rgba(2, 3, 4, 0.34) 78%,
+    rgba(1, 2, 3, 0.62) 100%
+  );
+}
+
+/* ---------- chrome ---------- */
+
+.chrome {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 900ms ease 400ms;
+}
+
+.chrome.is-ready {
+  opacity: 1;
+}
+
+.chrome a,
+.chrome button {
+  pointer-events: auto;
+}
+
+.chrome a:focus-visible,
+.chrome button:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* the two pill controls carry their own rounded focus rings: the generic
+   2px-radius treatment above would draw a rectangle around their pill shape */
+.chrome .cue:focus-visible,
+.chrome .cta:focus-visible {
+  border-radius: 999px;
+  outline-offset: 3px;
+}
+
+.chrome .cue:focus-visible {
+  outline-color: var(--cue-accent);
+}
+
+.chrome .cta:focus-visible {
+  outline-color: var(--cyan);
+}
+
+/* the control travels during these phases — never drag a ring across the scene */
+.phase-playing .cue:focus-visible,
+.phase-resetting .cue:focus-visible {
+  outline: none;
+}
+
+/* reveal groups: absent until the city settles */
+
+.rv {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 300ms var(--ease),
+    transform 300ms var(--ease),
+    visibility 0s linear 300ms;
+}
+
+.phase-done .rv {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 300ms var(--ease),
+    transform 300ms var(--ease),
+    visibility 0s;
+}
+
+.phase-done .rv-brand { transition-delay: 0ms; }
+.phase-done .rv-nav { transition-delay: 130ms; }
+.phase-done .rv-h1 { transition-delay: 300ms; }
+.phase-done .rv-p { transition-delay: 460ms; }
+.phase-done .rv-cta { transition-delay: 620ms; }
+
+/* topbar */
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 24px;
+  padding: 22px 44px;
+}
+
+.topbar .brand {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.topbar .nav {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.brand-en {
+  font-size: 18px;
+  font-weight: 570;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.brand-jp {
+  font-family: var(--font-jp);
+  font-size: 11.5px;
+  font-weight: 420;
+  letter-spacing: 0.03em;
+  color: #8e9996;
+  white-space: nowrap;
+  transition: color 260ms var(--ease);
+}
+
+.brand:hover .brand-jp,
+.brand:focus-visible .brand-jp {
+  color: #b6c1bd;
+}
+
+/* nav */
+
+.nav {
+  display: flex;
+  gap: 28px;
+}
+
+/* the sound control wears the nav's clothes but is a state, not a topic:
+   its rule stays lit while sound is on rather than only on hover */
+.nav button.sound[aria-pressed='true'] {
+  color: var(--ink);
+}
+
+.nav button.sound[aria-pressed='true'] .nav-en::after {
+  transform: scaleX(1);
+  background: color-mix(in srgb, var(--cyan) 55%, transparent);
+}
+
+.nav button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-en);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 240ms var(--ease);
+}
+
+.nav-en {
+  font-size: 13px;
+  font-weight: 535;
+  letter-spacing: -0.01em;
+  padding-bottom: 4px;
+}
+
+.nav-en::after {
+  content: '';
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--cyan);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 280ms var(--ease);
+}
+
+.nav-jp {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  font-family: var(--font-jp);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 280ms var(--ease), transform 280ms var(--ease);
+  white-space: nowrap;
+}
+
+.nav button:hover,
+.nav button:focus-visible,
+.nav button[aria-expanded='true'] {
+  color: var(--ink);
+}
+
+.nav button:hover .nav-en::after,
+.nav button:focus-visible .nav-en::after,
+.nav button[aria-expanded='true'] .nav-en::after {
+  transform: scaleX(1);
+}
+
+.nav button:hover .nav-jp,
+.nav button:focus-visible .nav-jp,
+.nav button[aria-expanded='true'] .nav-jp {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* lede */
+
+.lede {
+  position: absolute;
+  left: 44px;
+  bottom: 46px;
+  /* wider than the headline needs, so the larger display size has air */
+  max-width: 520px;
+}
+
+/*
+ * The headline is the only display-type in the page. `balance` plus a max
+ * width narrower than the full sentence but wider than "last train home"
+ * gives the two-line break without a hard <br>, so it still reflows on a
+ * phone instead of clipping.
+ */
+.lede h1 {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.97;
+  text-wrap: balance;
+  max-width: 8.6em;
+  color: var(--ink);
+  margin-bottom: 19px;
+}
+
+.lede p {
+  font-size: 14.75px;
+  font-weight: 430;
+  line-height: 1.58;
+  letter-spacing: -0.01em;
+  color: var(--ink-muted);
+  /* ~47 characters a line, which sets the paragraph in three. The `ch` unit
+     is the width of a zero, much wider than an average letter, so 36ch is
+     what 47 characters actually measures in Archivo. */
+  max-width: 40ch;
+  text-wrap: pretty;
+}
+
+/* ---------- illuminated playback control ---------- */
+
+/*
+ * The pill carries the same neon as the record's label ring: cyan while the
+ * record waits, magenta once the needle is down. Registering the property is
+ * what lets a custom colour interpolate rather than snap — every accent below
+ * is mixed from it, so the edge, glow, sweep and focus ring all turn together.
+ */
+@property --cue-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff2c9c;
+}
+
+/*
+ * The control is a real centre-column grid item. It never animates `top`:
+ * travel between the header and the record centre is a transform on the
+ * button itself, while hover/press transforms live on .cue-inner so the two
+ * can never overwrite each other.
+ */
+.cue {
+  --cue-accent: var(--magenta);
+  grid-column: 2;
+  justify-self: center;
+  position: relative;
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-en);
+  cursor: pointer;
+  transform: translate3d(0, var(--cue-travel, 0px), 0);
+  transition:
+    transform 1150ms var(--travel-ease),
+    opacity 280ms var(--ease),
+    visibility 0s linear 280ms,
+    --cue-accent 1050ms var(--ease) 210ms;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.cue::after {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -3px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(
+    50% 100% at 50% 60%,
+    color-mix(in srgb, var(--cue-accent) 50%, transparent),
+    transparent 72%
+  );
+  filter: blur(6px);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity 240ms var(--ease), filter 240ms var(--ease);
+}
+
+.cue-inner {
+  position: relative;
+  display: block;
+  padding: 1px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cue-accent) 42%, transparent);
+  transition: transform 160ms var(--ease), background 240ms var(--ease);
+}
+
+.cue-inner::before {
+  content: '';
+  position: absolute;
+  inset: -70%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 70%,
+    color-mix(in srgb, var(--cue-accent) 66%, #ffffff) 79%,
+    transparent 88%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cue-face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 152px;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 55%),
+    rgba(11, 14, 17, 0.86);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  transition: background 240ms var(--ease);
+}
+
+.cue-en {
+  font-size: 13.5px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.cue-jp {
+  font-family: var(--font-jp);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #9aa6a2;
+  transition: color 240ms var(--ease);
+}
+
+/*
+ * Standby mark: the label logo above the control, both sitting inside the
+ * record's ring. The control travels to `50vh` while waiting, so the mark is
+ * hung off the same line and lifted clear of it — the pair then reads as
+ * centred in the ring rather than the control alone sitting low in it.
+ */
+/*
+ * The record's centre projects to exactly 50vh, so both pieces are hung off
+ * that line and offset by half the other one plus the gap — which centres
+ * the wordmark-and-control block on the ring rather than the control alone.
+ */
+.standby-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transform: translateY(calc(-50% - (var(--cue-h) + var(--standby-gap)) / 2));
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 420ms var(--ease),
+    visibility 0s linear 420ms;
+}
+
+.standby-en {
+  font-size: 18px;
+  font-weight: 570;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.standby-jp {
+  font-family: var(--font-jp);
+  font-size: 11.5px;
+  font-weight: 420;
+  letter-spacing: 0.03em;
+  color: #8e9996;
+  white-space: nowrap;
+}
+
+.phase-idle .standby-mark,
+.phase-resetting .standby-mark {
+  opacity: 1;
+  visibility: visible;
+  /* arrives after the control has settled back into the ring */
+  transition:
+    opacity 620ms var(--ease) 320ms,
+    visibility 0s;
+}
+
+.phase-idle .cue,
+.phase-playing .cue,
+.phase-done .cue,
+.phase-resetting .cue {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    transform 1150ms var(--travel-ease),
+    opacity 280ms var(--ease),
+    visibility 0s,
+    --cue-accent 1050ms var(--ease) 210ms;
+}
+
+.phase-idle .cue,
+.phase-resetting .cue {
+  /* `50vh - 43px` lands the control's own centre on the ring's centre; the
+     second term drops it by half the wordmark plus the gap, so the pair —
+     not the control by itself — is what sits centred in the ring */
+  --cue-travel: calc(50vh - 43px + (var(--standby-mark-h) + var(--standby-gap)) / 2);
+  /* waiting, or on its way back to waiting: cyan, like the label ring */
+  --cue-accent: var(--cyan);
+}
+
+.phase-resetting .cue {
+  transition-delay: 200ms;
+  transition-duration: 1330ms;
+}
+
+.phase-playing .cue,
+.phase-resetting .cue {
+  pointer-events: none;
+}
+
+.cue:hover .cue-inner,
+.cue:focus-visible .cue-inner {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--cue-accent) 62%, transparent);
+}
+
+.cue:hover .cue-face,
+.cue:focus-visible .cue-face {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 55%),
+    rgba(17, 21, 25, 0.88);
+}
+
+.cue:hover .cue-jp,
+.cue:focus-visible .cue-jp {
+  color: var(--ink);
+}
+
+.cue:hover::after,
+.cue:focus-visible::after {
+  opacity: 1;
+  filter: blur(5px);
+}
+
+.cue:hover .cue-inner::before,
+.cue:focus-visible .cue-inner::before {
+  animation: edge-sweep 440ms linear 1;
+}
+
+@keyframes edge-sweep {
+  0% {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(360deg);
+  }
+}
+
+.cue:active .cue-inner {
+  transform: translateY(1px);
+}
+
+.cue:active::after {
+  filter: blur(3px);
+  opacity: 0.7;
+}
+
+/* ---------- bottom-right CTA ---------- */
+
+.cta {
+  position: absolute;
+  right: 44px;
+  bottom: 46px;
+  display: inline-block;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.cta::after {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -3px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(50% 100% at 50% 60%, rgba(32, 231, 255, 0.45), transparent 72%);
+  filter: blur(6px);
+  opacity: 0.8;
+  pointer-events: none;
+  transition: opacity 240ms var(--ease), filter 240ms var(--ease);
+}
+
+.cta-inner {
+  position: relative;
+  display: block;
+  padding: 1px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(32, 231, 255, 0.4);
+  transition: transform 160ms var(--ease), background 240ms var(--ease);
+}
+
+.cta-inner::before {
+  content: '';
+  position: absolute;
+  inset: -70%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 70%,
+    rgba(150, 243, 255, 0.95) 79%,
+    rgba(32, 231, 255, 0) 88%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cta-face {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 55%),
+    rgba(10, 13, 15, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 240ms var(--ease);
+}
+
+.cta-en {
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+}
+
+.cta-jp {
+  font-family: var(--font-jp);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: #9aa6a2;
+  transition: color 240ms var(--ease);
+}
+
+.cta:hover .cta-inner,
+.cta:focus-visible .cta-inner {
+  transform: translateY(-1px);
+  background: rgba(32, 231, 255, 0.6);
+}
+
+.cta:hover .cta-face,
+.cta:focus-visible .cta-face {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 55%),
+    rgba(16, 21, 24, 0.86);
+}
+
+.cta:hover .cta-jp,
+.cta:focus-visible .cta-jp {
+  color: var(--ink);
+}
+
+.cta:hover::after,
+.cta:focus-visible::after {
+  opacity: 1;
+  filter: blur(5px);
+}
+
+.cta:hover .cta-inner::before,
+.cta:focus-visible .cta-inner::before {
+  animation: edge-sweep 460ms linear 1;
+}
+
+.cta:active .cta-inner {
+  transform: translateY(1px);
+}
+
+.cta:active::after {
+  filter: blur(3px);
+  opacity: 0.7;
+}
+
+/* ---------- information insert ---------- */
+
+/*
+ * Printed-insert language, not a product modal: a smoked black card with
+ * hairline rules and one magenta catalogue line. Centred on both axes, over
+ * a backdrop light enough that the town is never fully hidden behind it.
+ */
+.info {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 240ms var(--ease),
+    visibility 0s linear 240ms;
+}
+
+.info.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 300ms var(--ease),
+    visibility 0s;
+}
+
+.info-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 4, 5, 0.56);
+}
+
+.info-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(560px, calc(100vw - 88px));
+  padding: 28px 32px 24px;
+  background: #080a0b;
+  border: 1px solid rgba(233, 241, 234, 0.14);
+  border-radius: 2px;
+  transform: translateY(10px);
+  transition: transform 320ms var(--ease);
+}
+
+.info.is-open .info-panel {
+  transform: translateY(0);
+}
+
+.info-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(233, 241, 234, 0.1);
+}
+
+.info-cat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 560;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--magenta);
+}
+
+.info-cat-jp {
+  font-family: var(--font-jp);
+  font-size: 10px;
+  font-weight: 420;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #8a4a6d;
+}
+
+.info-close {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-en);
+  font-size: 12px;
+  font-weight: 520;
+  letter-spacing: -0.005em;
+  color: var(--ink-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 220ms var(--ease);
+}
+
+.info-close span {
+  font-family: var(--font-jp);
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  transition: color 220ms var(--ease);
+}
+
+.info-close:hover,
+.info-close:focus-visible {
+  color: var(--ink);
+}
+
+.info-close:hover span,
+.info-close:focus-visible span {
+  color: var(--ink-muted);
+}
+
+/* switching topics cross-fades the text rather than swapping it */
+.info-body {
+  animation: info-swap 260ms var(--ease) both;
+}
+
+@keyframes info-swap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.info-panel h2 {
+  margin: 20px 0 14px;
+  font-size: 19px;
+  font-weight: 560;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+}
+
+.info-panel p {
+  font-size: 13.5px;
+  font-weight: 430;
+  line-height: 1.66;
+  letter-spacing: -0.005em;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.info-panel p + p {
+  margin-top: 13px;
+}
+
+.info-foot {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(233, 241, 234, 0.1);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+}
+
+/* the two navigation buttons stay above the backdrop: they are this panel's
+   switcher, so they keep working while it is open */
+.chrome.info-open .topbar .nav {
+  position: relative;
+  z-index: 6;
+}
+
+/* ---------- inside a venue ---------- */
+
+/*
+ * Entering the shop hands the frame back to the city model: the hero copy,
+ * the CTA and the navigation step aside, and only the wordmark and the
+ * playback pill stay. Nothing here touches the settled hero styling itself.
+ */
+.chrome.view-entering-releases .rv-h1,
+.chrome.view-entering-releases .rv-p,
+.chrome.view-entering-releases .rv-cta,
+.chrome.view-entering-releases .rv-nav,
+.chrome.view-releases .rv-h1,
+.chrome.view-releases .rv-p,
+.chrome.view-releases .rv-cta,
+.chrome.view-releases .rv-nav,
+.chrome.view-leaving-releases .rv-h1,
+.chrome.view-leaving-releases .rv-p,
+.chrome.view-leaving-releases .rv-cta,
+.chrome.view-leaving-releases .rv-nav {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition:
+    opacity 420ms var(--ease),
+    transform 420ms var(--ease),
+    visibility 0s linear 420ms;
+  transition-delay: 0ms;
+}
+
+/* the label framing is deliberately secondary to the physical shop */
+.venue-copy,
+.venue-caption {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity 420ms var(--ease),
+    transform 420ms var(--ease),
+    visibility 0s linear 420ms;
+}
+
+.view-releases .venue-copy,
+.view-releases .venue-caption {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 460ms var(--ease),
+    transform 460ms var(--ease),
+    visibility 0s;
+}
+
+.view-releases .venue-copy {
+  transition-delay: 60ms;
+}
+
+.view-releases .venue-caption {
+  transition-delay: 220ms;
+}
+
+.venue-copy {
+  left: 44px;
+  bottom: 46px;
+  max-width: 320px;
+}
+
+.venue-copy h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 560;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+
+.venue-copy .vt-jp {
+  font-family: var(--font-jp);
+  font-size: 12px;
+  font-weight: 420;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+.venue-copy p {
+  font-size: 13px;
+  font-weight: 430;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  color: var(--ink-muted);
+}
+
+/* live text beside the window — no card, just a rule and a short column */
+.venue-caption {
+  /* the composition deliberately leaves the right of frame dark; the caption
+     lives in that negative space, clear of every sign on the façade */
+  right: 56px;
+  bottom: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(233, 241, 234, 0.18);
+  max-width: 220px;
+}
+
+.vc-cat {
+  font-size: 11px;
+  font-weight: 560;
+  letter-spacing: 0.09em;
+  /* the caption carries the selected pressing's accent, like its sleeve */
+  color: var(--accent, var(--magenta));
+  transition: color 320ms var(--ease);
+}
+
+.vc-jp {
+  font-family: var(--font-jp);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  margin-top: 3px;
+}
+
+.vc-en {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.vc-artist {
+  font-size: 12.5px;
+  font-weight: 430;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.vc-limited {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 9px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.vc-limited span {
+  font-family: var(--font-jp);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* ---------- controls pinned to the model ---------- */
+
+/*
+ * The shop's hit area is the building. It carries no frame of its own: hover
+ * and focus are answered by the shop itself lighting up in the scene, and the
+ * only screen-side focus mark is a soft halo, never a rectangle.
+ */
+.hotspot,
+.sleeve-pick {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  will-change: transform;
+}
+
+.chrome .hotspot:focus-visible {
+  outline: none;
+}
+
+.hotspot::after {
+  content: '';
+  position: absolute;
+  inset: -14%;
+  border-radius: 40%;
+  background: radial-gradient(50% 50% at 50% 52%, rgba(255, 44, 156, 0.42), transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms var(--ease);
+}
+
+.hotspot:focus-visible::after {
+  opacity: 1;
+}
+
+.chrome .sleeve-pick:focus-visible {
+  outline: 1.5px solid rgba(233, 241, 234, 0.6);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* responsive */
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 20px 22px;
+  }
+
+  .nav {
+    gap: 18px;
+  }
+
+  .lede {
+    left: 22px;
+    right: 22px;
+    bottom: 92px;
+  }
+
+  .cta {
+    right: 22px;
+    bottom: 22px;
+  }
+
+  .cta-face {
+    padding: 9px 15px;
+  }
+
+  /* narrow screens: sit below the wordmark so the two never collide */
+  .cue {
+    --cue-header: 54px;
+  }
+
+  .phase-playing .cue,
+  .phase-done .cue {
+    --cue-travel: var(--cue-header);
+  }
+
+  .cue-face {
+    min-width: 0;
+    height: 38px;
+    padding: 0 15px;
+    gap: 8px;
+  }
+
+  .cue-en {
+    font-size: 12.5px;
+  }
+
+  .cue-jp {
+    font-size: 10px;
+  }
+
+  /* phone: the shop stays the picture, so the caption lies along the bottom
+     edge as a single line instead of a column beside the window */
+  .venue-copy {
+    left: 22px;
+    right: 22px;
+    bottom: 116px;
+    max-width: none;
+  }
+
+  .venue-caption {
+    left: 22px;
+    right: 22px;
+    top: auto;
+    bottom: 26px;
+    translate: none;
+    max-width: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid rgba(233, 241, 234, 0.18);
+  }
+
+  .vc-jp {
+    font-size: 15px;
+    margin-top: 0;
+  }
+
+  .vc-en,
+  .vc-artist {
+    font-size: 12px;
+    margin-top: 0;
+  }
+
+  .vc-limited {
+    margin-top: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  /* the wordmark, the control and the two links cannot share one row at this
+     width, so the links drop to a second row rather than being dropped */
+  .topbar {
+    row-gap: 6px;
+  }
+
+  /* span the whole row so the labels never wrap in a narrow third column */
+  .nav {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-self: end;
+    gap: 16px;
+  }
+
+  .nav-en {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* three links make that second row wide enough to reach the centred
+     control, so the control travels clear of it rather than into it */
+  .cue {
+    --cue-header: 96px;
+  }
+}
+
+/* phones: the insert becomes a bottom sheet, with Close pinned in view */
+@media (max-width: 620px) {
+  .info-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    translate: none;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px 22px 26px;
+    border-width: 1px 0 0;
+    border-radius: 2px 2px 0 0;
+    transform: translateY(16px);
+  }
+
+  .info-head {
+    position: sticky;
+    top: -20px;
+    margin: -20px -22px 0;
+    padding: 20px 22px 14px;
+    background: #080a0b;
+  }
+
+  .info-panel h2 {
+    margin-top: 18px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* stack the control's two lines so the pill sits inside the neon ring */
+  .cue-face {
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    height: auto;
+    padding: 9px 16px 10px;
+  }
+
+  /* The ring is only ~160px across here, so the wordmark is set smaller to
+     sit inside it, and the control stacks its two lines and stands 50px
+     rather than 42px tall. Both metrics live on the shared ancestor because
+     the mark and the control each position themselves from them. */
+  .chrome {
+    --cue-h: 50px;
+    --standby-mark-h: 34px;
+  }
+
+  .standby-en {
+    font-size: 14px;
+  }
+
+  .standby-jp {
+    font-size: 9.5px;
+  }
+
+  .phase-idle .cue,
+  .phase-resetting .cue {
+    --cue-travel: calc(50vh - 45px + (var(--standby-mark-h) + var(--standby-gap)) / 2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  /* no perimeter light; a brighter static edge and glow carry hover instead */
+  .cue-inner::before,
+  .cta-inner::before {
+    display: none;
+  }
+
+  /* the control still travels gently rather than snapping between positions */
+  .cue {
+    transition: transform 700ms ease !important;
+  }
+
+  .rv,
+  .phase-done .rv {
+    transition: opacity 320ms ease !important;
+  }
+}

@@ -1,0 +1,50 @@
+MIT License
+
+Copyright (c) 2026 Hamza Ehsan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+===============================================================================
+SCOPE OF THIS LICENCE
+===============================================================================
+
+The MIT licence above applies to the ORIGINAL SOURCE CODE in this repository:
+the TypeScript, React and CSS under `src/`, the build and deployment
+configuration, and the documentation.
+
+It does NOT apply to:
+
+1. The bundled typefaces, which keep their own licences. Archivo and Noto Sans
+   JP are under the SIL Open Font License 1.1. LT Remark (c) 2023 LyonsType is
+   under the SIL Open Font License 1.0, reproduced at
+   src/fonts/OFL-LTRemark.txt — note that "LT Remark" is a Reserved Font Name,
+   so a converted or modified copy may not keep that name.
+
+2. The audio in `public/audio/`, which is released separately under the
+   Creative Commons Attribution 4.0 International licence (CC BY 4.0). Use it
+   freely, including commercially, with credit to Hamza Ehsan.
+
+3. The "Last Train Records" name, the fictional label identity, the release
+   titles and catalogue numbers, and the visual design and art direction of
+   the experience. These remain the property of Hamza Ehsan and are not
+   granted under the MIT licence. You are welcome to read, run, learn from and
+   build on the code; please do not republish the work as your own label or
+   present the identity as yours.
+
+ASSET_CREDITS.md records the provenance and licence of every asset.
