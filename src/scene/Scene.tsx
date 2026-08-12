@@ -344,7 +344,10 @@ function FrameLimiter({ fps = TARGET_FPS }: { fps?: number }) {
       // reaches 16.667 and we would drop to 40
       if (t - last < interval - 1) return
       last = t
-      advance(t)
+      // seconds, not milliseconds: in `never` mode R3F assigns this straight
+      // to state.clock.elapsedTime, and every timing in the scene is read from
+      // that clock. Passing ms makes the whole piece run ~1000x fast.
+      advance(t / 1000)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
