@@ -1,4 +1,4 @@
-import { Suspense, forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef } from 'react'
+import { Suspense, forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   ContactShadows,
@@ -319,6 +319,40 @@ function Precompile({ onDone }: { onDone: () => void }) {
   return null
 }
 
+/**
+ * Drives the render loop at a fixed rate.
+ *
+ * The canvas runs with `frameloop="never"`, so nothing renders until this
+ * calls `advance()`. On a 120 Hz panel that means rendering every second
+ * refresh — an exact 60, with no half-frames and no drift. On a 60 Hz panel
+ * every refresh is used and the behaviour is unchanged.
+ *
+ * Everything in the scene is wall-clock anchored rather than frame-counted,
+ * so halving the render rate changes nothing about how long the entrance,
+ * the rewind or the camera moves take.
+ */
+function FrameLimiter({ fps = TARGET_FPS }: { fps?: number }) {
+  const advance = useThree((s) => s.advance)
+
+  useEffect(() => {
+    const interval = 1000 / fps
+    let raf = 0
+    let last = -Infinity
+    const tick = (t: number) => {
+      raf = requestAnimationFrame(tick)
+      // a small tolerance, or a 120 Hz panel's 8.333 ms cadence never quite
+      // reaches 16.667 and we would drop to 40
+      if (t - last < interval - 1) return
+      last = t
+      advance(t)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [advance, fps])
+
+  return null
+}
+
 /** Advances the shared timeline and rotates the world under the fixed needle. */
 function TimelineDriver({
   world,
@@ -521,7 +555,21 @@ type SceneProps = {
  * runtime shrinks the canvas but not the buffers, which measured *slower*
  * (the scene still renders large, then gets scaled down).
  */
-const PIXEL_BUDGET = 1_500_000
+/**
+ * Target frames per second.
+ *
+ * The scene is GPU-bound and the panel this was tuned on is 120 Hz, which
+ * leaves an 8.3 ms budget — measured GPU time sat at 7.6 ms in the 95th
+ * percentile, so frames intermittently landed a refresh late and the whole
+ * thing juddered. Rendering at a locked 60 gives a 16.7 ms budget instead:
+ * every frame lands, consistently, and the slow camera moves read as smooth.
+ * A steady 60 beats an unstable 90–110.
+ */
+const TARGET_FPS = 60
+
+/* With a 16.7 ms budget rather than 8.3 ms there is room to render more
+   pixels than before, so the image is sharper *and* the pacing is steadier. */
+const PIXEL_BUDGET = 2_000_000
 
 function chooseDpr() {
   if (typeof window === 'undefined') return 1
@@ -580,7 +628,8 @@ export const Scene = forwardRef<SceneHandle, SceneProps>(function Scene(
   return (
     <Canvas
       shadows
-      frameloop="always"
+      /* nothing renders until FrameLimiter calls advance() — see TARGET_FPS */
+      frameloop="never"
       dpr={dpr}
       gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => {
@@ -592,6 +641,7 @@ export const Scene = forwardRef<SceneHandle, SceneProps>(function Scene(
       <CameraRig />
       <TimelineDriver world={world} onDone={() => onPhase('done')} onStandby={() => onPhase('idle')} />
       <VenueDriver onView={onView} />
+      <FrameLimiter />
       <AudioDriver />
       <Projector />
       <color attach="background" args={['#050607']} />
